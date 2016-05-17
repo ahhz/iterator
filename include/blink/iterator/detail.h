@@ -100,6 +100,11 @@ namespace blink {
       template< bool C, class A, class B >
       using conditional_t = typename std::conditional<C, A, B>::type;
 
+      template<class T>
+      struct identity {
+        using type = T;
+      };
+
     }
     using detail::do_nothing;
     using detail::special_decay_t;

@@ -37,7 +37,7 @@
 
 namespace blink {
   namespace iterator {
-    
+
     template<class T> struct is_not_range_algebra_wrapper
     {
       const static bool value = !is_range_algebra_wrapped<T>::value;
@@ -46,11 +46,12 @@ namespace blink {
     template<class T>
     struct argument_type
     {
+
       using input_type = decay_t<T>;
       const static bool is_range = is_range_algebra_wrapped < input_type >::value;
       
       using lazy_type = conditional_t<is_range, 
-        detail::get_value_type<input_type>, std::identity<input_type> >;
+        detail::get_value_type<input_type>, detail::identity<input_type> >;
 
       using type = typename lazy_type::type;
     };
