@@ -1,4 +1,5 @@
 #include <boost/iterator/iterator_facade.hpp>
+
 namespace blink {
   namespace iterator {
     template<class Iterator>

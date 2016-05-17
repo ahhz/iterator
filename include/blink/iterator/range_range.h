@@ -172,14 +172,13 @@ namespace blink {
 
       using iterator = range_range_iterator < remove_reference_t<RangeRange> > ;
 
-      iterator begin() const
+      iterator begin() 
       {
         iterator i;
         i.find_begin(m_range_range);
         return i;
       }
-
-      iterator end() const
+      iterator end() 
       {
         iterator i;
         i.find_end(m_range_range);
