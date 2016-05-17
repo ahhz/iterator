@@ -96,29 +96,35 @@ namespace blink {
         range_algebra_transform* m_parent;
       };
 
-      template<class> struct transform_range_helper{};
-      template<class... Ranges>
-      struct transform_range_helper<std::tuple<Ranges...>>
+      
+      struct transform_range_helper
       {
-        using type = transform_range < applicator, Ranges... > ;
-        static const std::size_t nRanges = sizeof...(Ranges);
+        static const std::size_t nRanges = std::tuple_size<range_reference_tuple>::value;
         using range_indices = blink::utility::make_index_sequence < nRanges >;
-        
-        template<template<std::size_t...> class Pack, std::size_t... S>
-        type make(applicator& a, range_reference_tuple& ranges, Pack<S...>)
+
+        template<class> struct make_type;
+        template<class... RangeReferences>
+        struct make_type < std::tuple<RangeReferences...> >
         {
-          type(a, std::get<S>(ranges)...);
+          using type = transform_range < applicator, RangeReferences... >;
+        };
+
+        using type = typename make_type<range_reference_tuple>::type;
+         
+        template<template<std::size_t...> class Pack, std::size_t... S>
+        static type make(applicator& a, range_reference_tuple& ranges, Pack<S...>)
+        {
+          return make_transform_range(a, std::ref(std::get<S>(ranges))...);
         }
 
-        type make(applicator& a, range_reference_tuple& ranges)
+        static type make(applicator& a, range_reference_tuple& ranges)
         {
           return make(a, ranges, range_indices{});
         }
 
       };
 
-      using transform_range_helper_t = transform_range_helper < range_reference_tuple >;
-      using transform_range = typename transform_range_helper_t::type;
+      using transform_range = typename transform_range_helper::type;
       using iterator = get_iterator_t < transform_range > ;
      
       range_algebra_transform(const range_algebra_transform& that) = delete;
@@ -139,7 +145,7 @@ namespace blink {
         , m_ranges(blink::utility::refer_elements(m_arguments, variable_indices{}))
         , m_constant_arguments(blink::utility::refer_elements(m_arguments, constant_indices{}))
         , m_applicator(this)
-        , m_transform_range(m_applicator, m_ranges)
+        , m_transform_range(transform_range_helper::make(m_applicator, m_ranges))
       {
        // std::cout << "moved" << std::endl;
       }
@@ -151,7 +157,7 @@ namespace blink {
         , m_ranges(blink::utility::refer_elements(m_arguments, variable_indices{}))
         , m_constant_arguments(blink::utility::refer_elements(m_arguments, constant_indices{}))
         , m_applicator(this)
-        , m_transform_range(m_applicator, m_ranges)
+        , m_transform_range(transform_range_helper::make(m_applicator, m_ranges))
       {
       }
 

@@ -53,14 +53,19 @@ namespace blink {
       transform_range(transform_range&& that)
         : m_ranges(std::move(that.m_ranges))
         , m_f(std::move(that.m_f))
-
       {
-
       }
-      template<class... InRanges>
-      explicit transform_range(Function f, InRanges&&... ranges) 
-        : 
-        m_f(f),
+
+      template<class InFunction, class... InRanges
+        , typename = enable_if_t
+        < std::is_same< special_decay_t<InFunction>, Function >::value >
+        , typename = enable_if_t
+        < std::is_same
+        < std::tuple<special_decay_t<InRanges>... >
+        , std::tuple<Ranges... > >::value>
+        >  
+      transform_range(InFunction&& f, InRanges&&... ranges)
+        : m_f(std::forward<InFunction>(f)),
         m_ranges(std::forward<InRanges>(ranges)...)
       { }
 
