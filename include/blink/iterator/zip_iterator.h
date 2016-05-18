@@ -63,7 +63,7 @@ namespace blink {
       template < typename... InIterators, typename = enable_if_t<
         std::is_same
         < std::tuple<decay_t<InIterators>... >
-        , std::tuple<Iterators... > >::value>>
+        , std::tuple<decay_t<Iterators>... > >::value>>
       zip_iterator(const zip_iterator<InIterators...>& that)
         : m_iterators(that.m_iterators)
       {
