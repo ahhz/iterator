@@ -1,15 +1,25 @@
-cmake_minimum_required (VERSION 2.8)
-project(iterator)
-include_directories("include/")
-file(GLOB_RECURSE MY_HDRS "*.h")
-add_executable(iterator_demo demo.cpp)
-add_library(iterator STATIC dummy.cpp ${MY_HDRS})
+###############################################################################
+#
+# Require 3.0 for INTERFACE projects
+
+cmake_minimum_required (VERSION 3.0)
 
 ###############################################################################
 #
-# Search for dependencies
-# Boost C++ Libraries support - required
-find_package(Boost 1.55 REQUIRED)
-include_directories(${Boost_INCLUDE_DIRS})
+# Create an interface library for the header-only library
+#
+
+add_library(iterator INTERFACE)
+target_include_directories(iterator INTERFACE "include/")
+target_link_libraries(iterator INTERFACE boost_interface)
+
+
+###############################################################################
+#
+# Create an executable using the header only interface
+#
+
+add_executable(iterator_demo demo.cpp)
+target_link_libraries(iterator_demo PRIVATE iterator)
 
 ###############################################################################
