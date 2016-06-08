@@ -13,6 +13,13 @@ add_library(iterator INTERFACE)
 target_include_directories(iterator INTERFACE "include/")
 target_link_libraries(iterator INTERFACE boost_interface)
 
+###############################################################################
+#
+# Find header files and put in separate target for IDE
+#
+
+file(GLOB_RECURSE MY_HDRS "*.h")
+add_custom_target(iterator_headers SOURCES ${MY_HDRS})
 
 ###############################################################################
 #
