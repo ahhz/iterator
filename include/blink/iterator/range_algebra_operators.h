@@ -8,6 +8,8 @@
 //=======================================================================
 //
 // MACRO to provide operator overloads for range_algebra_wrappers
+//
+// Overload raster_algebra operator "op" and ties it to function "func". 
 
 #ifndef BLINK_ITERATOR_RANGE_ALGEBRA_OPERATOR_MACRO_H_AHZ
 #define BLINK_ITERATOR_RANGE_ALGEBRA_OPERATOR_MACRO_H_AHZ
@@ -17,126 +19,108 @@
 #include <blink/iterator/transform_range.h>
 #include <functional>
 
-// Overload raster_algebra operator "op" in namespace "space" and ties it to 
-// function "func". The operator "op" is subsequently pulled into the current 
-// namespace, which MUST be blink::iterator.
 
-// The macro is an implementation detail. Not part of the public interface
+#define BLINK_ITERATOR_RA_BINARY_OP(op, func)                                      \
+  namespace blink {                                                                \
+    namespace iterator {                                                           \
+                                                                                   \
+      template<class R, class T>                                                   \
+      auto operator op(range_algebra_wrapper<R>&& r, T&& v)->decltype              \
+        (range_algebra_function(func{}, std::move(r), std:::forward<T>(v)))        \
+      {                                                                            \
+        return range_algebra_function(func{}, std::move(r), std:::forward<T>(v));  \
+      }                                                                            \
+                                                                                   \
+      template<class R, class T>                                                   \
+      auto operator op(range_algebra_wrapper<R>& r, T&& v)->decltype               \
+        (range_algebra_function(func{}, std::ref(r), std::forward<T>(v)))          \
+      {                                                                            \
+        return range_algebra_function(func{}, std::ref(r), std::forward<T>(v));    \
+      }                                                                            \
+                                                                                   \
+      template<class R, class T>                                                   \
+      auto operator op(T&& v, range_algebra_wrapper<R>&& r)->decltype              \
+        (range_algebra_function(func{}, std::forward<T>(v), std::move(r)))         \
+      {                                                                            \
+        return range_algebra_function(func{}, std::forward<T>(v), std::move(r));   \
+      }                                                                            \
+                                                                                   \
+      template<class R, class T>                                                   \
+      auto operator op(T&& v, range_algebra_wrapper<R>& r)->decltype               \
+        (range_algebra_function(func{}, std::forward<T>(v), std::ref(r)))          \
+      {                                                                            \
+        return range_algebra_function(func{}, std::forward<T>(v), std::ref(r));    \
+      }                                                                            \
+                                                                                   \
+      template<class R1, class R2>                                                 \
+      auto operator op(range_algebra_wrapper<R1>&& r1,                             \
+        range_algebra_wrapper<R2>&& r2)->decltype                                  \
+        (range_algebra_function(func{}, std::move(r1), std::move(r2)))             \
+      {                                                                            \
+        return range_algebra_function(func{}, std::move(r1), std::move(r2));       \
+      }                                                                            \
+                                                                                   \
+      template<class R1, class R2>                                                 \
+      auto operator op(range_algebra_wrapper<R1>&& r1,                             \
+        range_algebra_wrapper<R2>& r2)->decltype                                   \
+        (range_algebra_function(func{}, std::move(r1), std::ref(r2)))              \
+      {                                                                            \
+        return range_algebra_function(func{}, std::move(r1), std::ref(r2));        \
+      }                                                                            \
+                                                                                   \
+      template<class R1, class R2>                                                 \
+      auto operator op(range_algebra_wrapper<R1>& r1,                              \
+        range_algebra_wrapper<R2>&& r2)->decltype                                  \
+        (range_algebra_function(func{}, std::ref(r1), std::move(r2)))              \
+      {                                                                            \
+        return range_algebra_function(func{}, std::ref(r1), std::move(r2));        \
+      }                                                                            \
+                                                                                   \
+      template<class R1, class R2>                                                 \
+      auto operator op(range_algebra_wrapper<R1>& r1,                              \
+        range_algebra_wrapper<R2>& r2)->decltype                                   \
+        (range_algebra_function(func{}, std::ref(r1), std::ref(r2)))               \
+      {                                                                            \
+        return range_algebra_function(func{}, std::ref(r1), std::ref(r2));         \
+      }                                                                            \
+    }                                                                              \
+  } // end of BLINK_ITERATOR_RA_BINARY_OP(op, func)
+ 
+#define BLINK_ITERATOR_RA_UNARY_OP(op, func)                                       \
+  namespace blink {                                                                \
+    namespace iterator {                                                           \
+                                                                                   \
+      template<class R>                                                            \
+      auto operator op(range_algebra_wrapper<R>& r)->decltype                      \
+        (range_algebra_function(func{}, std::ref(r)))                              \
+      {                                                                            \
+        return range_algebra_function(func{}, std::ref(r));                        \
+      }                                                                            \
+                                                                                   \
+      template<class R>                                                            \
+      auto operator op(range_algebra_wrapper<R>&& r)->decltype                     \
+        (range_algebra_function(func{}, std::move(r)))                             \
+      {                                                                            \
+        return range_algebra_function(func{}, std::move(r));                       \
+      }                                                                            \
+  }                                                                                \
+} // end of BLINK_ITERATOR_RA_UNARY_OP(op, func)
 
-#define BLINK_ITERATOR_RA_BINARY_OP(space, op, func)                          \
-  namespace space {                                                           \
-                                                                              \
-    template<class R> using wrap = range_algebra_wrapper<R>;                  \
-    template<class T> using dec = special_decay_t<T>;                         \
-                                                                              \
-    template<class A, class B>                                                \
-    using trans1 = range_algebra_transform<func, A, B>;                       \
-                                                                              \
-    template<class A, class B>                                                \
-    using trans2 = transform_range<func, A, B>;                               \
-                                                                              \
-    using std::move;                                                          \
-    using std::ref;                                                           \
-    using std::forward;                                                       \
-                                                                              \
-    template<class R, class T>                                                \
-    wrap< trans1< wrap<R>, dec<T> > >                                         \
-      operator op(wrap<R>&& r, T&& v)                                         \
-    {                                                                         \
-      return range_algebra_function(func{}, move(r), forward<T>(v));          \
-    }                                                                         \
-                                                                              \
-    template<class R, class T>                                                \
-    wrap< trans1< wrap<R>&, dec<T> > >                                        \
-    operator op(wrap<R>& r, T&& v)                                            \
-    {                                                                         \
-      return range_algebra_function(func{}, ref(r), forward<T>(v));           \
-    }                                                                         \
-                                                                              \
-    template<class R, class T>                                                \
-    wrap< trans1< dec<T>, wrap<R> > >                                         \
-    operator op(T&& v, wrap<R>&& r)                                           \
-    {                                                                         \
-      return range_algebra_function(func{}, forward<T>(v), move(r));          \
-    }                                                                         \
-    template<class R, class T>                                                \
-    wrap< trans1< dec<T>, wrap<R>& > >                                        \
-      operator op(T&& v, wrap<R>& r)                                          \
-    {                                                                         \
-      return range_algebra_function(func{}, forward<T>(v), ref(r));           \
-    }                                                                         \
-                                                                              \
-    template<class R1, class R2>                                              \
-    wrap< trans2< wrap<R1>, wrap<R2> > >                                      \
-    operator op(wrap<R1>&& r1, wrap<R2>&& r2)                                 \
-    {                                                                         \
-      return range_algebra(make_transform_range(func{}, move(r1), move(r2))); \
-    }                                                                         \
-                                                                              \
-    template<class R1, class R2>                                              \
-    wrap< trans2< wrap<R1>, wrap<R2>& > >                                     \
-      operator op(wrap<R1>&& r1, wrap<R2>& r2)                                \
-    {                                                                         \
-      return range_algebra(make_transform_range(func{}, move(r1), ref(r2)));  \
-    }                                                                         \
-                                                                              \
-    template<class R1, class R2>                                              \
-    wrap< trans2< wrap<R1>&, wrap<R2> > >                                     \
-      operator op(wrap<R1>& r1, wrap<R2>&& r2)                                \
-    {                                                                         \
-      return range_algebra(make_transform_range(func{}, ref(r1), move(r2)));  \
-    }                                                                         \
-                                                                              \
-    template<class R1, class R2>                                              \
-    wrap< trans2< wrap<R1>&, wrap<R2>& > >                                    \
-      operator op(wrap<R1>& r1, wrap<R2>& r2)                                 \
-    {                                                                         \
-      return range_algebra(make_transform_range(func{}, ref(r1), ref(r2)));   \
-    }                                                                         \
-  }                                                                           \
-  using space::operator op;
+BLINK_ITERATOR_RA_BINARY_OP(+, std::plus<>)
+BLINK_ITERATOR_RA_BINARY_OP(-, std::minus<>)
+BLINK_ITERATOR_RA_BINARY_OP(/ , std::divides<>)
+BLINK_ITERATOR_RA_BINARY_OP(%, std::modulus<>)
+BLINK_ITERATOR_RA_BINARY_OP(*, std::multiplies<>)
+BLINK_ITERATOR_RA_BINARY_OP(&&, std::logical_and<>)
+BLINK_ITERATOR_RA_BINARY_OP(|| , std::logical_or<>)
+BLINK_ITERATOR_RA_BINARY_OP(> , std::greater<>)
+BLINK_ITERATOR_RA_BINARY_OP(>= , std::greater_equal<>)
+BLINK_ITERATOR_RA_BINARY_OP(< , std::less<>)
+BLINK_ITERATOR_RA_BINARY_OP(<= , std::less_equal<>)
+BLINK_ITERATOR_RA_BINARY_OP(== , std::equal_to<>)
+BLINK_ITERATOR_RA_BINARY_OP(!= , std::not_equal_to<>)
 
-#define BLINK_ITERATOR_RA_UNARY_OP(space, op, func)                           \
-  namespace space {                                                           \
-                                                                              \
-    template<class R> using wrap = range_algebra_wrapper<R>;                  \
-                                                                              \
-    template<class R>                                                         \
-    range_algebra_wrapper< transform_range<func, wrap<R>& > >                 \
-      operator op(wrap<R>& r)                                                 \
-    {                                                                         \
-      return range_algebra(make_transform_range(func{}, std::ref(r)));        \
-    }                                                                         \
-                                                                              \
-    template<class R>                                                         \
-    range_algebra_wrapper< transform_range<func, wrap<R> > >                  \
-      operator op(wrap<R>&& r)                                                \
-    {                                                                         \
-      return range_algebra(make_transform_range(func{}, std::move(r)));       \
-    }                                                                         \
-  }                                                                           \
-  using space::operator op;
-
-namespace blink {
-  namespace iterator {
-
-    BLINK_ITERATOR_RA_BINARY_OP(plus_space, +, std::plus<>)
-    BLINK_ITERATOR_RA_BINARY_OP(minus_space, -, std::minus<>)
-    BLINK_ITERATOR_RA_BINARY_OP(divides_space, / , std::divides<>)
-    BLINK_ITERATOR_RA_BINARY_OP(modulus_space, %, std::modulus<>)
-    BLINK_ITERATOR_RA_BINARY_OP(multiplies_space, *, std::multiplies<>)
-    BLINK_ITERATOR_RA_BINARY_OP(logical_and_space, &&, std::logical_and<>)
-    BLINK_ITERATOR_RA_BINARY_OP(logical_or_space, || , std::logical_or<>)
-    BLINK_ITERATOR_RA_BINARY_OP(greater_space, > , std::greater<>)
-    BLINK_ITERATOR_RA_BINARY_OP(greater_equal_space, >= , std::greater_equal<>)
-    BLINK_ITERATOR_RA_BINARY_OP(less_space, < , std::less<>)
-    BLINK_ITERATOR_RA_BINARY_OP(less_equal_space, <= , std::less_equal<>)
-    BLINK_ITERATOR_RA_BINARY_OP(equal_to_space, == , std::equal_to<>)
-    BLINK_ITERATOR_RA_BINARY_OP(not_equal_to_space, != , std::not_equal_to<>)
-
-    BLINK_ITERATOR_RA_UNARY_OP(negate_space, -, std::negate<>)
-    BLINK_ITERATOR_RA_UNARY_OP(logical_not_space, ! , std::logical_not<>)
-  }
-}
+BLINK_ITERATOR_RA_UNARY_OP(-, std::negate<>)
+BLINK_ITERATOR_RA_UNARY_OP(! , std::logical_not<>)
 
 #endif
