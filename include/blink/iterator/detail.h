@@ -105,6 +105,11 @@ namespace blink {
         using type = T;
       };
 
+      template<class A, class B> 
+      using disable_if_decay_to_same_t = enable_if_t<
+        !std::is_same<decay_t<special_decay_t<A> >
+        , decay_t<special_decay_t<B> > >::value>;
+
     }
     using detail::do_nothing;
     using detail::special_decay_t;
@@ -118,6 +123,7 @@ namespace blink {
     using detail::apply_to_pack_t;
     using detail::enable_if_t;
     using detail::conditional_t;
+    using detail::disable_if_decay_to_same_t;
 
   }
 }

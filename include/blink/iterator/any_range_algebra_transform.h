@@ -27,24 +27,24 @@ namespace blink {
     template<class T>
     using any_range_algebra_wrapper = range_algebra_wrapper < any_input_range<T> > ;
 
-    template<class Function, class... Args>
-    using range_algebra_transform_value_type = typename range_algebra_transform<
-      special_decay_t<Function>, special_decay_t<Args>...>::value_type;
+//    template<class Function, class... Args>
+//    using range_algebra_transform_value_type = typename range_algebra_transform<
+//      special_decay_t<Function>, special_decay_t<Args>...>::value_type;
 
     template<class Function, class...Args>
-    any_input_range<range_algebra_transform_value_type<Function, Args...> >
-      any_range_algebra_transform(Function&& f, Args&&... a)
+    auto any_range_algebra_transform(Function&& f, Args&&... a)->decltype
+      (make_any_input_range(make_range_algebra_transform(
+        std::forward<Function>(f), std::forward<Args>(a)...)))
     {
-
-      return
-      any_input_range<range_algebra_transform_value_type<Function, Args...> >(
-          make_range_algebra_transform(std::forward<Function>(f)
-          , std::forward<Args>(a)...) ) ;
+      return make_any_input_range(make_range_algebra_transform(
+        std::forward<Function>(f), std::forward<Args>(a)...) ) ;
     }
 
     template<class Function, class...Args>
-    range_algebra_wrapper<any_input_range<range_algebra_transform_value_type<Function, Args...> > >
-      any_range_algebra_function(Function&& f, Args&&... a)
+    auto any_range_algebra_function(Function&& f, Args&&... a)->decltype
+      (range_algebra(
+        any_range_algebra_transform(std::forward<Function>(f)
+          , std::forward<Args>(a)...)))
     {
       return range_algebra(
         any_range_algebra_transform(std::forward<Function>(f)
