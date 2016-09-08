@@ -142,9 +142,9 @@ namespace blink {
 
       range_range_iterator& operator++()
       {
-        for (int i = 0; i < m_iterators.size(); ++i)
+        for (auto&& i : m_iterators)
         {
-          ++(m_iterators[i]);
+          ++i;
         }
         return *this;
       }
